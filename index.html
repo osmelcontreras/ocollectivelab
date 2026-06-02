@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ocollectivelab</title>
+<meta name="description" content="ocollectivelab — Creative studio specializing in photography, direction, and visual storytelling."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0c0b;--fg:#f0ede6;--accent:#b8a88a;--muted:#5a5750;
+  --border:rgba(240,237,230,0.1);--card-bg:#141412;
+  --font-d:'Bebas Neue',sans-serif;
+  --font-b:'DM Mono',monospace;
+  --font-s:'Cormorant Garamond',serif;
+}
+body.light{
+  --bg:#f0ede6;--fg:#0c0c0b;--accent:#5a4a36;--muted:#9a958e;
+  --border:rgba(12,12,11,0.1);--card-bg:#e8e2d8;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-b);font-size:11px;letter-spacing:.08em;transition:background .5s,color .5s;overflow-x:hidden;cursor:none}
+
+/* ── LOADER ── */
+#loader{
+  position:fixed;inset:0;z-index:9000;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:24px;
+  transition:opacity .8s ease,transform .8s ease;
+}
+#loader.out{opacity:0;pointer-events:none}
+.loader-logo{
+  font-family:var(--font-d);font-size:clamp(32px,6vw,64px);
+  letter-spacing:.2em;color:var(--fg);
+  clip-path:inset(0 100% 0 0);
+  transition:clip-path 1s cubic-bezier(.22,1,.36,1) .2s;
+}
+#loader.go .loader-logo{clip-path:inset(0 0% 0 0)}
+.loader-bar{
+  width:120px;height:1px;background:var(--border);
+  position:relative;overflow:hidden;
+}
+.loader-bar::after{
+  content:'';position:absolute;inset:0;background:var(--accent);
+  transform:translateX(-100%);
+  transition:transform 1.4s cubic-bezier(.22,1,.36,1) .1s;
+}
+#loader.go .loader-bar::after{transform:translateX(0)}
+
+/* ── CURSOR ── */
+#cur{position:fixed;width:7px;height:7px;background:var(--fg);border-radius:50%;pointer-events:none;z-index:8000;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s}
+#cur-ring{position:fixed;width:28px;height:28px;border:1px solid rgba(184,168,138,.5);border-radius:50%;pointer-events:none;z-index:7999;transform:translate(-50%,-50%);transition:border-color .3s}
+body.link-hover #cur{width:14px;height:14px;background:var(--accent)}
+body.link-hover #cur-ring{border-color:var(--accent)}
+
+/* ── HEADER ── */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 32px;
+  pointer-events:none;
+}
+header>*{pointer-events:all}
+.logo{font-family:var(--font-d);font-size:20px;letter-spacing:.18em;color:var(--fg);text-decoration:none;text-transform:uppercase;transition:opacity .3s}
+.logo:hover{opacity:.6}
+.hdr-right{display:flex;align-items:center;gap:20px}
+.hdr-clock{font-size:9px;color:var(--muted);letter-spacing:.15em;min-width:110px}
+.hdr-email{font-size:9px;color:var(--muted);text-decoration:none;letter-spacing:.1em;transition:color .2s}
+.hdr-email:hover{color:var(--fg)}
+.theme-btn,.menu-btn{background:none;border:none;font-family:var(--font-b);font-size:9px;color:var(--fg);letter-spacing:.18em;cursor:none;text-transform:uppercase;padding:0;transition:opacity .2s}
+.theme-btn:hover,.menu-btn:hover{opacity:.6}
+.theme-btn span{color:var(--muted)}
+/* hide header until loader done */
+header{opacity:0;transform:translateY(-10px);transition:opacity .6s,transform .6s}
+header.visible{opacity:1;transform:translateY(0)}
+
+/* ── VIEW TOGGLE (bottom left) ── */
+#view-toggle{
+  position:fixed;bottom:24px;left:32px;z-index:500;
+  display:flex;align-items:center;gap:0;
+  opacity:0;transition:opacity .5s;
+}
+#view-toggle.visible{opacity:1}
+.vt-btn{
+  background:none;border:none;font-family:var(--font-b);font-size:9px;
+  color:var(--muted);letter-spacing:.18em;cursor:none;text-transform:uppercase;
+  padding:4px 0;transition:color .2s;
+}
+.vt-btn.active{color:var(--fg)}
+.vt-btn:hover{color:var(--fg)}
+.vt-sep{font-size:9px;color:var(--muted);padding:0 8px}
+
+/* ── COUNTER (bottom right) ── */
+#slide-counter{
+  position:fixed;bottom:24px;right:32px;z-index:500;
+  font-size:9px;color:var(--muted);letter-spacing:.18em;
+  opacity:0;transition:opacity .5s;
+}
+#slide-counter.visible{opacity:1}
+
+/* ── SCROLL HINT ── */
+#scroll-hint{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  z-index:500;font-size:9px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;
+  display:flex;align-items:center;gap:10px;
+  opacity:0;transition:opacity .6s;
+}
+#scroll-hint.visible{opacity:1}
+#scroll-hint.hidden{opacity:0;pointer-events:none}
+#scroll-hint::before,#scroll-hint::after{content:'';display:block;width:20px;height:1px;background:var(--muted)}
+
+/* ── MENU OVERLAY ── */
+#menu{
+  position:fixed;inset:0;z-index:600;background:var(--bg);
+  display:flex;flex-direction:column;
+  padding:20px 32px 32px;
+  opacity:0;pointer-events:none;
+  transition:opacity .4s ease;
+}
+#menu.open{opacity:1;pointer-events:all}
+.menu-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:48px}
+.close-btn{background:none;border:none;font-family:var(--font-b);font-size:9px;color:var(--fg);letter-spacing:.18em;cursor:none;text-transform:uppercase}
+.menu-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px;flex:1}
+.menu-col h4{font-family:var(--font-b);font-size:9px;color:var(--muted);letter-spacing:.22em;text-transform:uppercase;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.menu-col a{
+  display:block;font-family:var(--font-d);
+  font-size:clamp(22px,3.2vw,36px);color:var(--fg);text-decoration:none;
+  letter-spacing:.06em;margin-bottom:2px;text-transform:uppercase;
+  transition:color .2s,transform .2s;
+  transform:translateX(0);
+}
+.menu-col a:hover{color:var(--accent);transform:translateX(6px)}
+/* staggered menu reveal */
+#menu.open .menu-col a{animation:menuIn .5s cubic-bezier(.22,1,.36,1) both}
+#menu.open .menu-col a:nth-child(1){animation-delay:.05s}
+#menu.open .menu-col a:nth-child(2){animation-delay:.1s}
+#menu.open .menu-col a:nth-child(3){animation-delay:.15s}
+#menu.open .menu-col a:nth-child(4){animation-delay:.2s}
+#menu.open .menu-col a:nth-child(5){animation-delay:.25s}
+@keyframes menuIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.menu-ftr{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  border-top:1px solid var(--border);padding-top:20px;margin-top:auto;
+}
+.menu-socials{display:flex;gap:20px}
+.menu-socials a{font-size:9px;color:var(--muted);text-decoration:none;letter-spacing:.15em;text-transform:uppercase;transition:color .2s}
+.menu-socials a:hover{color:var(--fg)}
+.menu-copy{font-size:9px;color:var(--muted);letter-spacing:.1em}
+
+/* ── GALLERY STAGE ── */
+#gallery-stage{
+  position:fixed;inset:0;z-index:1;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+
+/* ── SINGLE / CENTERED PHOTO VIEW ── */
+#single-view{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .5s;
+}
+#single-view.visible{opacity:1}
+
+.single-photo-wrap{
+  position:relative;
+  width:min(55vw,680px);
+  /* intro: scale from 0 */
+  transform:scale(.7);opacity:0;
+  transition:transform 1.2s cubic-bezier(.22,1,.36,1),opacity 1.2s cubic-bezier(.22,1,.36,1);
+}
+.single-photo-wrap.in{transform:scale(1);opacity:1}
+.single-photo{
+  width:100%;display:block;
+  aspect-ratio:3/4;object-fit:cover;
+  filter:grayscale(8%);
+  transition:transform .6s cubic-bezier(.22,1,.36,1);
+}
+.single-photo-wrap:hover .single-photo{transform:scale(1.02)}
+.single-caption{
+  margin-top:10px;display:flex;justify-content:space-between;
+  font-size:9px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;
+}
+
+/* ── HORIZONTAL SCROLL (LIST) VIEW ── */
+#list-view{
+  position:absolute;inset:0;
+  opacity:0;pointer-events:none;
+  transition:opacity .5s;
+}
+#list-view.visible{opacity:1;pointer-events:all}
+
+/* Horizontal track */
+.h-track{
+  display:flex;align-items:center;
+  height:100%;
+  padding:0 80px;
+  gap:28px;
+  /* offset driven by JS */
+  transition:none;
+  will-change:transform;
+}
+.h-slide{
+  flex:0 0 auto;
+  position:relative;
+  transition:transform .5s cubic-bezier(.22,1,.36,1),opacity .5s;
+}
+.h-slide img{
+  display:block;height:65vh;width:auto;max-width:55vw;
+  object-fit:cover;filter:grayscale(6%);
+  transition:filter .4s,transform .5s cubic-bezier(.22,1,.36,1);
+}
+/* active slide */
+.h-slide.active img{filter:grayscale(0%)}
+.h-slide:not(.active){opacity:.55;transform:scale(.95)}
+.h-slide.active{opacity:1;transform:scale(1)}
+.h-slide-label{
+  margin-top:10px;font-size:9px;color:var(--muted);
+  letter-spacing:.14em;text-transform:uppercase;
+  transition:color .3s;
+}
+.h-slide.active .h-slide-label{color:var(--fg)}
+
+/* ── GRID VIEW ── */
+#grid-view{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;
+  opacity:0;pointer-events:none;
+  transition:opacity .5s;
+  padding:90px 32px 80px;
+}
+#grid-view.visible{opacity:1;pointer-events:all}
+.grid-inner{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:16px;
+}
+.grid-item{
+  position:relative;overflow:hidden;cursor:none;
+  opacity:0;transform:translateY(20px);
+  transition:opacity .6s cubic-bezier(.22,1,.36,1),transform .6s cubic-bezier(.22,1,.36,1);
+}
+.grid-item.in{opacity:1;transform:translateY(0)}
+.grid-item img{width:100%;display:block;aspect-ratio:3/4;object-fit:cover;transition:transform .5s cubic-bezier(.22,1,.36,1),filter .4s}
+.grid-item:hover img{transform:scale(1.04);filter:brightness(.85)}
+.grid-item-info{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:32px 12px 12px;
+  background:linear-gradient(transparent,rgba(0,0,0,.65));
+  opacity:0;transition:opacity .3s;
+}
+body.light .grid-item-info{background:linear-gradient(transparent,rgba(240,237,230,.8))}
+.grid-item:hover .grid-item-info{opacity:1}
+.grid-item-info span{font-size:9px;color:var(--fg);letter-spacing:.12em;text-transform:uppercase}
+
+/* ── ARROW NAV (horizontal scroll) ── */
+.arr-nav{
+  position:fixed;top:50%;transform:translateY(-50%);z-index:300;
+  background:none;border:none;color:var(--fg);
+  font-family:var(--font-b);font-size:10px;letter-spacing:.15em;
+  cursor:none;padding:12px 16px;
+  opacity:0;transition:opacity .4s,color .2s;
+}
+#arr-prev{left:20px}
+#arr-next{right:20px}
+.arr-nav.visible{opacity:.5}
+.arr-nav:hover{opacity:1!important}
+#list-view.visible~.arr-nav{opacity:.5}
+
+/* ── PHOTO TITLE OVERLAY (centered) ── */
+#photo-title{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,calc(-50% + min(28vw,340px) + 28px));
+  z-index:300;text-align:center;pointer-events:none;
+  opacity:0;transition:opacity .4s;
+}
+#photo-title.visible{opacity:1}
+#photo-title .pt-name{font-family:var(--font-d);font-size:clamp(16px,2.2vw,24px);letter-spacing:.14em;text-transform:uppercase;color:var(--fg)}
+#photo-title .pt-sub{font-family:var(--font-s);font-style:italic;font-size:13px;color:var(--muted);margin-top:2px}
+
+/* ── TRANSITIONS between views ── */
+.view-fade-exit{animation:vFadeOut .35s ease forwards}
+.view-fade-enter{animation:vFadeIn .45s ease .1s forwards}
+@keyframes vFadeOut{to{opacity:0}}
+@keyframes vFadeIn{from{opacity:0}to{opacity:1}}
+
+/* ── ABOUT + CONTACT (scrollable, behind gallery) ── */
+#info-section{
+  position:fixed;inset:0;z-index:0;
+  overflow-y:auto;
+  opacity:0;pointer-events:none;
+  transition:opacity .5s;
+  background:var(--bg);
+}
+#info-section.visible{opacity:1;pointer-events:all;z-index:400}
+.info-inner{padding:100px 32px 60px;max-width:900px}
+.info-inner h2{font-family:var(--font-d);font-size:clamp(48px,8vw,96px);line-height:.88;text-transform:uppercase;margin-bottom:32px}
+.info-inner h2 em{font-style:normal;color:transparent;-webkit-text-stroke:1px var(--accent)}
+.info-inner p{font-family:var(--font-s);font-size:18px;line-height:1.75;color:var(--fg);margin-bottom:20px;font-weight:300}
+.info-inner p.sm{font-family:var(--font-b);font-size:10px;color:var(--muted);line-height:1.9;letter-spacing:.08em}
+.services{display:flex;margin-top:40px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.svc{flex:1;padding:18px 14px;border-right:1px solid var(--border);font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;line-height:1.7}
+.svc:last-child{border-right:none}
+.svc strong{display:block;color:var(--fg);font-weight:400;margin-bottom:5px}
+.contact-row{margin-top:80px;padding-top:40px;border-top:1px solid var(--border)}
+.contact-row h3{font-family:var(--font-d);font-size:clamp(40px,6vw,72px);line-height:.9;text-transform:uppercase;margin-bottom:20px}
+.contact-email{font-family:var(--font-s);font-style:italic;font-size:20px;color:var(--accent);text-decoration:none;transition:color .2s}
+.contact-email:hover{color:var(--fg)}
+.contact-socials{display:flex;gap:20px;margin-top:24px}
+.contact-socials a{font-size:9px;color:var(--muted);text-decoration:none;letter-spacing:.15em;text-transform:uppercase;transition:color .2s}
+.contact-socials a:hover{color:var(--fg)}
+.info-close{
+  position:fixed;top:20px;right:32px;z-index:500;
+  background:none;border:none;font-family:var(--font-b);font-size:9px;
+  color:var(--fg);letter-spacing:.18em;cursor:none;text-transform:uppercase;
+  opacity:0;pointer-events:none;transition:opacity .4s;
+}
+#info-section.visible~.info-close,
+.info-close.visible{opacity:1;pointer-events:all}
+
+/* ── MISC ── */
+a{cursor:none}
+@media(max-width:768px){
+  header{padding:16px 20px}
+  .hdr-email{display:none}
+  .menu-cols{grid-template-columns:1fr;gap:12px}
+  .h-track{padding:0 48px;gap:16px}
+  .h-slide img{height:55vh;max-width:80vw}
+  .single-photo-wrap{width:min(80vw,500px)}
+  #arr-prev{left:8px}#arr-next{right:8px}
+  .info-inner{padding:90px 20px 60px}
+  #view-toggle{left:20px}
+  #slide-counter{right:20px}
+  .grid-inner{grid-template-columns:repeat(2,1fr);gap:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">ocollectivelab</div>
+  <div class="loader-bar"></div>
+</div>
+
+<!-- CURSOR -->
+<div id="cur"></div>
+<div id="cur-ring"></div>
+
+<!-- HEADER -->
+<header id="hdr">
+  <a href="#" class="logo" id="home-link">ocollectivelab</a>
+  <div class="hdr-right">
+    <span class="hdr-clock" id="clock">NYC — 00:00 AM</span>
+    <button class="theme-btn" id="theme-btn">LIGHT <span>|</span> DARK</button>
+    <a href="mailto:osmelstudio@gmail.com" class="hdr-email">osmelstudio@gmail.com</a>
+    <button class="menu-btn" id="menu-open">MENU</button>
+  </div>
+</header>
+
+<!-- VIEW TOGGLE -->
+<div id="view-toggle">
+  <button class="vt-btn active" id="btn-list">LIST</button>
+  <span class="vt-sep">|</span>
+  <button class="vt-btn" id="btn-grid">GRID</button>
+</div>
+
+<!-- SLIDE COUNTER -->
+<div id="slide-counter">01 / 08</div>
+
+<!-- SCROLL HINT -->
+<div id="scroll-hint">SCROLL</div>
+
+<!-- ARROW NAV -->
+<button class="arr-nav" id="arr-prev">←</button>
+<button class="arr-nav" id="arr-next">→</button>
+
+<!-- MENU OVERLAY -->
+<nav id="menu">
+  <div class="menu-hdr">
+    <a href="#" class="logo">ocollectivelab</a>
+    <button class="close-btn" id="menu-close">CLOSE</button>
+  </div>
+  <div class="menu-cols">
+    <div class="menu-col">
+      <h4>Work</h4>
+      <a href="#" data-view="list">Photography</a>
+      <a href="#" data-view="list">Portraits</a>
+      <a href="#" data-view="list">Commissions</a>
+      <a href="#" data-view="list">Editorial</a>
+      <a href="#" data-view="list">Series</a>
+    </div>
+    <div class="menu-col">
+      <h4>Projects</h4>
+      <a href="#" data-view="list">Campaigns</a>
+      <a href="#" data-view="list">Art Direction</a>
+      <a href="#" data-view="list">Tearsheets</a>
+      <a href="#" data-view="list">Visual Stories</a>
+    </div>
+    <div class="menu-col">
+      <h4>Studio</h4>
+      <a href="#" data-view="about">About</a>
+      <a href="#" data-view="about">Contact</a>
+    </div>
+  </div>
+  <div class="menu-ftr">
+    <div class="menu-socials">
+      <a href="https://www.instagram.com/ocollectivelab/" target="_blank" rel="noopener">Instagram</a>
+      <a href="mailto:hello@ocollectivelab.com">Email</a>
+    </div>
+    <span class="menu-copy">© 2026 ocollectivelab</span>
+  </div>
+</nav>
+
+<!-- INFO / ABOUT section -->
+<section id="info-section">
+  <div class="info-inner">
+    <h2>Creative<br><em>Collective</em><br>Lab</h2>
+    <p>ocollectivelab is a creative studio dedicated to photography, direction, and visual storytelling — building imagery that is honest, deliberate, and lasting.</p>
+    <p class="sm">We collaborate with brands, artists, and individuals who believe in the power of strong visual language. Every project is approached as a singular work — studied, crafted, and delivered with intent.<br><br>Based in New York City. Available worldwide.</p>
+    <div class="services">
+      <div class="svc"><strong>Photography</strong>Editorial · Portrait · Campaign</div>
+      <div class="svc"><strong>Direction</strong>Film · Commercial · Music</div>
+      <div class="svc"><strong>Art Direction</strong>Identity · Visual Systems</div>
+    </div>
+    <div class="contact-row">
+      <h3>Let's Work<br>Together</h3>
+      <a href="mailto:hello@ocollectivelab.com" class="contact-email">hello@ocollectivelab.com</a>
+      <div class="contact-socials">
+        <a href="https://www.instagram.com/ocollectivelab/" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://www.linkedin.com/in/osmelcontreras/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+      <p class="sm" style="margin-top:40px">© 2026 ocollectivelab — All rights reserved</p>
+    </div>
+  </div>
+</section>
+<button class="info-close" id="info-close">← BACK</button>
+
+<!-- GALLERY STAGE -->
+<div id="gallery-stage">
+
+  <!-- SINGLE / intro view -->
+  <div id="single-view">
+    <div class="single-photo-wrap" id="single-wrap">
+      <!-- replaced by JS with actual slide img -->
+      <div class="single-photo" style="background:#1c1a17;aspect-ratio:3/4"></div>
+      <div class="single-caption">
+        <span id="sc-left">Photography — 001</span>
+        <span id="sc-right">2025</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIST / horizontal scroll view -->
+  <div id="list-view">
+    <div class="h-track" id="h-track"></div>
+  </div>
+
+  <!-- GRID view -->
+  <div id="grid-view">
+    <div class="grid-inner" id="grid-inner"></div>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA  (replace src with real image paths)
+// ─────────────────────────────────────────────
+const PHOTOS = [
+  {src:'https://eu.zonerama.com/photos/627290769_889x1333.jpg',label:'Portraits — 001',year:'2025',cat:'Portraits'},
+  {src:'https://eu.zonerama.com/photos/627290788_790x1186_16.jpg',label:'Editorial — 002',year:'2024',cat:'Editorial'},
+  {src:'https://eu.zonerama.com/photos/627290752_640x800.jpg',label:'Street — 003',year:'2025',cat:'Street'},
+  {src:'https://eu.zonerama.com/photos/627290745_1280x1600.jpg',label:'Portraits — 004',year:'2024',cat:'Portraits'},
+  {src:'https://eu.zonerama.com/photos/627290844_1664x1109.jpg',label:'Editorial — 005',year:'2026',cat:'Editorial'},
+  {src:'https://eu.zonerama.com/photos/627290760_1280x1600.jpg',label:'Portraits — 006',year:'2025',cat:'Special'},
+  {src:'https://eu.zonerama.com/photos/627290758_1280x1600.jpg',label:'Editorial — 007',year:'2025',cat:'Editorial'},
+  {src:'https://eu.zonerama.com/photos/627308242_666x1000.jpg',label:'Portraits — 008',year:'2024',cat:'Portraits'},
+  {src:'https://eu.zonerama.com/photos/627309251_607x911.jpg',label:'Portraits — 009',year:'2024',cat:'Portraits'},
+  {src:'https://eu.zonerama.com/photos/627308722_1127x1409.jpg',label:'Portraits — 010',year:'2024',cat:'Portraits'},
+  {src:'https://eu.zonerama.com/photos/627290743_1280x1600.jpg',label:'Portraits — 011',year:'2024',cat:'Portraits'},
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let currentSlide = 0;
+let viewMode = 'single'; // 'single' | 'list' | 'grid' | 'about'
+let isAnimating = false;
+let scrollAccum = 0;
+const SCROLL_THRESH = 80;
+
+// ─────────────────────────────────────────────
+// CURSOR
+// ─────────────────────────────────────────────
+const cur = document.getElementById('cur');
+const curRing = document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX; my=e.clientY;
+  cur.style.left=mx+'px'; cur.style.top=my+'px';
+});
+(function loop(){
+  rx+=(mx-rx)*.13; ry+=(my-ry)*.13;
+  curRing.style.left=rx+'px'; curRing.style.top=ry+'px';
+  requestAnimationFrame(loop);
+})();
+document.querySelectorAll('a,button').forEach(el=>{
+  el.addEventListener('mouseenter',()=>document.body.classList.add('link-hover'));
+  el.addEventListener('mouseleave',()=>document.body.classList.remove('link-hover'));
+});
+
+// ─────────────────────────────────────────────
+// CLOCK
+// ─────────────────────────────────────────────
+function updateClock(){
+  const now=new Date();
+  const h=now.getHours().toString().padStart(2,'0');
+  const m=now.getMinutes().toString().padStart(2,'0');
+  const ap=now.getHours()<12?'AM':'PM';
+  document.getElementById('clock').textContent=`NYC — ${h}:${m} ${ap}`;
+}
+updateClock(); setInterval(updateClock,30000);
+
+// ─────────────────────────────────────────────
+// BUILD SLIDES
+// ─────────────────────────────────────────────
+const track = document.getElementById('h-track');
+const gridInner = document.getElementById('grid-inner');
+
+PHOTOS.forEach((p,i)=>{
+  // list slide
+  const slide = document.createElement('div');
+  slide.className='h-slide'+(i===0?' active':'');
+  slide.dataset.index=i;
+  slide.innerHTML=`<img src="${p.src}" alt="${p.label}" loading="lazy"/><div class="h-slide-label">${p.label}</div>`;
+  track.appendChild(slide);
+
+  // grid item (with stagger)
+  const gi = document.createElement('div');
+  gi.className='grid-item';
+  gi.dataset.index=i;
+  gi.style.transitionDelay=(i*.07)+'s';
+  gi.innerHTML=`<img src="${p.src}" alt="${p.label}" loading="lazy"/>
+    <div class="grid-item-info"><span>${p.label} — ${p.year}</span></div>`;
+  gi.addEventListener('click',()=>{ goToSlide(i); switchView('list'); });
+  gridInner.appendChild(gi);
+});
+
+// ─────────────────────────────────────────────
+// LOADER
+// ─────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  const loader=document.getElementById('loader');
+  loader.classList.add('go');
+  setTimeout(()=>{
+    loader.classList.add('out');
+    document.getElementById('hdr').classList.add('visible');
+    // show single view with intro animation
+    showSingleView();
+    setTimeout(()=>{
+      document.getElementById('view-toggle').classList.add('visible');
+      document.getElementById('scroll-hint').classList.add('visible');
+      document.getElementById('slide-counter').classList.add('visible');
+    },600);
+  },1600);
+});
+
+// ─────────────────────────────────────────────
+// SINGLE VIEW
+// ─────────────────────────────────────────────
+function showSingleView(){
+  const sv=document.getElementById('single-view');
+  sv.classList.add('visible');
+  const wrap=document.getElementById('single-wrap');
+  setSinglePhoto(currentSlide);
+  // trigger entrance
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{ wrap.classList.add('in'); });
+  });
+}
+
+function setSinglePhoto(idx){
+  const p=PHOTOS[idx];
+  const wrap=document.getElementById('single-wrap');
+  wrap.innerHTML=`<img class="single-photo" src="${p.src}" alt="${p.label}"/>
+    <div class="single-caption"><span>${p.label}</span><span>${p.year}</span></div>`;
+  updateCounter(idx);
+}
+
+// ─────────────────────────────────────────────
+// VIEW SWITCHING
+// ─────────────────────────────────────────────
+function switchView(next){
+  if(next===viewMode) return;
+  const prev=viewMode;
+  viewMode=next;
+
+  const views={
+    single:document.getElementById('single-view'),
+    list:document.getElementById('list-view'),
+    grid:document.getElementById('grid-view'),
+    about:document.getElementById('info-section'),
+  };
+  const arrs=document.querySelectorAll('.arr-nav');
+  const hint=document.getElementById('scroll-hint');
+
+  // hide all
+  Object.values(views).forEach(v=>{
+    v.classList.remove('visible');
+  });
+
+  // activate
+  const el=views[next];
+  if(el){ el.classList.add('visible'); }
+
+  // arrow nav
+  arrs.forEach(a=>a.classList.toggle('visible',next==='list'));
+
+  // scroll hint
+  hint.classList.toggle('visible', next==='single');
+  hint.classList.toggle('hidden',  next!=='single');
+
+  // btn toggle active
+  document.getElementById('btn-list').classList.toggle('active', next==='list'||next==='single');
+  document.getElementById('btn-grid').classList.toggle('active', next==='grid');
+
+  // grid stagger in
+  if(next==='grid'){
+    document.querySelectorAll('.grid-item').forEach((gi,i)=>{
+      gi.classList.remove('in');
+      setTimeout(()=>gi.classList.add('in'), i*60+100);
+    });
+  }
+
+  // list: position to current slide
+  if(next==='list'){
+    positionTrack(currentSlide, false);
+  }
+
+  // about: show close btn
+  const infoClose=document.getElementById('info-close');
+  if(next==='about'){
+    infoClose.classList.add('visible');
+  } else {
+    infoClose.classList.remove('visible');
+  }
+
+  updateCounter(currentSlide);
+}
+
+// ─────────────────────────────────────────────
+// HORIZONTAL TRACK POSITIONING
+// ─────────────────────────────────────────────
+function positionTrack(idx, animate=true){
+  const slides = document.querySelectorAll('.h-slide');
+  const active = slides[idx];
+  if(!active) return;
+
+  // center active slide
+  const stageW = window.innerWidth;
+  const slideW = active.offsetWidth;
+  const slideLeft = active.offsetLeft;
+  const offset = -(slideLeft - (stageW/2 - slideW/2));
+
+  const tr = document.getElementById('h-track');
+  if(animate){
+    tr.style.transition='transform .75s cubic-bezier(.22,1,.36,1)';
+  } else {
+    tr.style.transition='none';
+  }
+  tr.style.transform=`translateX(${offset}px)`;
+
+  // update active
+  slides.forEach((s,i)=>{
+    s.classList.toggle('active', i===idx);
+  });
+  updateCounter(idx);
+}
+
+// ─────────────────────────────────────────────
+// GO TO SLIDE
+// ─────────────────────────────────────────────
+function goToSlide(idx){
+  idx = Math.max(0, Math.min(PHOTOS.length-1, idx));
+  currentSlide = idx;
+
+  if(viewMode==='list'){
+    positionTrack(idx, true);
+  } else if(viewMode==='single'){
+    const wrap=document.getElementById('single-wrap');
+    // brief exit
+    wrap.style.opacity='0';
+    wrap.style.transform='scale(.95)';
+    setTimeout(()=>{
+      setSinglePhoto(idx);
+      wrap.style.transition='opacity .5s ease, transform .5s ease';
+      wrap.style.opacity='1';
+      wrap.style.transform='scale(1)';
+    },250);
+  }
+  updateCounter(idx);
+}
+
+function updateCounter(idx){
+  const total = PHOTOS.length;
+  const n = (idx+1).toString().padStart(2,'0');
+  const t = total.toString().padStart(2,'0');
+  document.getElementById('slide-counter').textContent=`${n} / ${t}`;
+}
+
+// ─────────────────────────────────────────────
+// WHEEL → horizontal slide navigation
+// ─────────────────────────────────────────────
+window.addEventListener('wheel',(e)=>{
+  if(viewMode==='grid'||viewMode==='about') return;
+  e.preventDefault();
+
+  scrollAccum += e.deltaY || e.deltaX;
+  if(Math.abs(scrollAccum) > SCROLL_THRESH){
+    const dir = scrollAccum > 0 ? 1 : -1;
+    scrollAccum = 0;
+
+    if(viewMode==='single'){
+      // first scroll → switch to list
+      switchView('list');
+      setTimeout(()=>goToSlide(currentSlide+dir), 100);
+    } else {
+      goToSlide(currentSlide + dir);
+    }
+  }
+},{passive:false});
+
+// ─────────────────────────────────────────────
+// KEYBOARD
+// ─────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(viewMode==='grid'||viewMode==='about') return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') goToSlide(currentSlide+1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')  goToSlide(currentSlide-1);
+});
+
+// ─────────────────────────────────────────────
+// TOUCH SWIPE
+// ─────────────────────────────────────────────
+let touchX=null;
+document.addEventListener('touchstart',e=>{ touchX=e.touches[0].clientX; },{passive:true});
+document.addEventListener('touchend',e=>{
+  if(touchX===null) return;
+  const dx = e.changedTouches[0].clientX - touchX;
+  touchX=null;
+  if(viewMode==='grid'||viewMode==='about') return;
+  if(Math.abs(dx)>40){
+    if(viewMode==='single') switchView('list');
+    goToSlide(currentSlide + (dx<0?1:-1));
+  }
+});
+
+// ─────────────────────────────────────────────
+// ARROW BUTTONS
+// ─────────────────────────────────────────────
+document.getElementById('arr-prev').addEventListener('click',()=>goToSlide(currentSlide-1));
+document.getElementById('arr-next').addEventListener('click',()=>goToSlide(currentSlide+1));
+
+// ─────────────────────────────────────────────
+// SLIDE click → zoom in single (in list mode)
+// ─────────────────────────────────────────────
+document.querySelectorAll('.h-slide').forEach(s=>{
+  s.addEventListener('click',()=>{
+    const i=parseInt(s.dataset.index);
+    if(i!==currentSlide){ goToSlide(i); return; }
+    // click active slide → single view
+    switchView('single');
+    setSinglePhoto(currentSlide);
+  });
+});
+
+// ─────────────────────────────────────────────
+// VIEW TOGGLE buttons
+// ─────────────────────────────────────────────
+document.getElementById('btn-list').addEventListener('click',()=>{
+  if(viewMode==='about') return;
+  switchView(viewMode==='list'?'single':'list');
+});
+document.getElementById('btn-grid').addEventListener('click',()=>{
+  if(viewMode==='grid') switchView('list');
+  else switchView('grid');
+});
+
+// ─────────────────────────────────────────────
+// HOME LINK
+// ─────────────────────────────────────────────
+document.getElementById('home-link').addEventListener('click',e=>{
+  e.preventDefault();
+  document.getElementById('menu').classList.remove('open');
+  switchView('single');
+  setSinglePhoto(currentSlide);
+});
+
+// ─────────────────────────────────────────────
+// MENU
+// ─────────────────────────────────────────────
+document.getElementById('menu-open').addEventListener('click',()=>{
+  document.getElementById('menu').classList.add('open');
+});
+document.getElementById('menu-close').addEventListener('click',()=>{
+  document.getElementById('menu').classList.remove('open');
+});
+document.querySelectorAll('[data-view]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const v=a.dataset.view;
+    document.getElementById('menu').classList.remove('open');
+    setTimeout(()=>switchView(v), 200);
+  });
+});
+
+// ─────────────────────────────────────────────
+// ABOUT close
+// ─────────────────────────────────────────────
+document.getElementById('info-close').addEventListener('click',()=>{
+  switchView('list');
+});
+
+// ─────────────────────────────────────────────
+// THEME
+// ─────────────────────────────────────────────
+document.getElementById('theme-btn').addEventListener('click',()=>{
+  document.body.classList.toggle('light');
+});
+
+// initial counter
+updateCounter(0);
+</script>
+</body>
+</html>
